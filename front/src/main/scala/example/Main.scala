@@ -1,5 +1,3 @@
-package example
-
 import cats.effect.unsafe.implicits.global
 import org.scalajs.dom
 import org.scalajs.dom.*

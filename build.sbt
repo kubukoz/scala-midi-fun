@@ -1,7 +1,6 @@
 import org.scalajs.linker.interface.ModuleSplitStyle
 
-lazy val root = project
-  .in(file("."))
+lazy val front = project
   .enablePlugins(ScalaJSPlugin)
   .settings(
     name         := "jk-studio",
@@ -17,3 +16,7 @@ lazy val root = project
       "org.soundsofscala" %%% "sounds-of-scala" % "0.1.0-SNAPSHOT"
     ),
   )
+
+lazy val root = project
+  .in(file("."))
+  .aggregate(front)
