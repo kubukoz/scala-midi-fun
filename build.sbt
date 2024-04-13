@@ -14,6 +14,7 @@ lazy val front = project
     },
     libraryDependencies += "org.scala-js" %%% "scalajs-dom" % "2.4.0",
     libraryDependencies ++= Seq(
+      // Local snapshot built from https://github.com/kubukoz/sounds-of-scala/tree/jk-customizations
       "org.soundsofscala" %%% "sounds-of-scala" % "0.1.0-SNAPSHOT",
       "org.http4s"        %%% "http4s-dom"      % "0.2.11",
       "org.http4s"        %%% "http4s-dsl"      % "0.23.26",
