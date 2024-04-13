@@ -11,6 +11,9 @@
   "license": "MIT",
   "dependencies": {
     "@scala-js/vite-plugin-scalajs": "^1.0.0",
-    "vite": "^4.1.0"
+    "@types/vscode": "^1.88.0",
+    "typescript": "^5.4.5",
+    "vite": "^4.1.0",
+    "vscode": "^1.1.37"
   }
 }

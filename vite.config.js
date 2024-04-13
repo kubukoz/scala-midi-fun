@@ -7,4 +7,9 @@ export default defineConfig({
       projectID: "front",
     }),
   ],
+  server: {
+    proxy: {
+      "/api": "http://localhost:8080",
+    },
+  },
 });

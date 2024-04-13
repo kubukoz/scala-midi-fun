@@ -1,4 +1,8 @@
 import cats.effect.unsafe.implicits.global
+import cats.effect.IO
+import org.http4s.dom.FetchClientBuilder
+import org.http4s.Method
+import org.http4s.Request
 import org.scalajs.dom
 import org.scalajs.dom.*
 import org.soundsofscala.models.*
@@ -45,80 +49,111 @@ def decodeMidi(data: Array[Int]): MidiEvent = {
 
 }
 
+// don't trust the names of these methods, this is pretty ugly code. But it works!
 def notePretty(note: Int): String = {
   val notes  = List("C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B")
   val octave = note / 12 - 1
   notes(note % 12) + octave
 }
 
+def noteAsScala(note: Int): String = {
+  val notes  = List("C", "C.sharp", "D", "D.sharp", "E", "F", "F.sharp", "G", "G.sharp", "A", "A.sharp", "B")
+  val octave = note / 12 - 1
+  notes(note % 12).split("\\.") match {
+    case Array(one, two) => one + octave + "." + two
+    case Array(one)      => one + octave
+  }
+}
+
+
 @main
 def helloWorld(): Unit = {
+
   val navi = window.navigator
+
   window.addEventListener(
     "DOMContentLoaded",
     _ =>
-      navi.permissions
-        .query(new PermissionDescriptor {
-          val name  = PermissionName.midi
-          val sysex = true
-        })
-        .toFuture
-        .flatMap { p =>
-          navi.asInstanceOf[js.Dynamic].requestMIDIAccess().asInstanceOf[js.Promise[MidiAccess]].toFuture
-        }
-        .map { midiAccess =>
-          midiAccess.inputs.foreach { (k, input) =>
-            input.onmidimessage = (msg: MidiMessage) => {
-              val decoded = decodeMidi(msg.data.toArray)
-              println(
-                s"MIDI message received: ${msg.data}, decoded: ${decoded} (note pretty: ${notePretty(decoded.note)})"
-              )
-
-              decoded match {
-                case MidiEvent.NoteOn(channel, note, velocity) =>
-                  val pitch: Pitch = Pitch.valueOf(
-                    notePretty(note).take(1)
-                  )
-                  val accidental: Accidental =
-                    if (notePretty(note).contains("#")) Accidental.Sharp else Accidental.Natural
-                  val theSound: MusicalEvent = Note(
-                    pitch = pitch,
-                    accidental = accidental,
-                    octave = Octave.from(note / 12).fold(e => throw new Exception(e), identity),
-                    duration = Duration.ThirtySecond,
-                    velocity = Velocity.Medium,
+      FetchClientBuilder[IO].resource.allocated
+        .map(_._1)
+        .unsafeToFuture()
+        .flatMap { client =>
+          navi.permissions
+            .query(new PermissionDescriptor {
+              val name  = PermissionName.midi
+              val sysex = true
+            })
+            .toFuture
+            .flatMap { p =>
+              println("got p")
+              navi.asInstanceOf[js.Dynamic].requestMIDIAccess().asInstanceOf[js.Promise[MidiAccess]].toFuture
+            }
+            .map { midiAccess =>
+              println("got midi access, inputs: " + midiAccess.inputs.size)
+              midiAccess.inputs.foreach { (k, input) =>
+                input.onmidimessage = (msg: MidiMessage) => {
+                  val decoded = decodeMidi(msg.data.toArray)
+                  println(
+                    s"MIDI message received: ${msg.data}, decoded: ${decoded} (note pretty: ${notePretty(decoded.note)}, as scala: ${noteAsScala(decoded.note)})"
                   )
 
-                  given AudioContext = AudioContext()
-
-                  given ScalaSynth = new ScalaSynth()
-
-                  val sequencer = Sequencer()
-
-                  val song = Song(
-                    title = Title("Test Song"),
-                    tempo = Tempo(240),
-                    swing = Swing.Straight,
-                    mixer = Mixer(
-                      Track(
-                        title = Title("Test Track"),
-                        musicalEvent = theSound,
-                        instrument = given_ScalaSynth,
+                  decoded match {
+                    case MidiEvent.NoteOn(channel, note, velocity) =>
+                      val pitch: Pitch = Pitch.valueOf(
+                        notePretty(note).take(1)
                       )
-                    ),
-                  )
+                      val accidental: Accidental =
+                        if (notePretty(note).contains("#")) Accidental.Sharp else Accidental.Natural
+                      var theSound: MusicalEvent = Note(
+                        pitch = pitch,
+                        accidental = accidental,
+                        octave = Octave.from(note / 12).fold(e => throw new Exception(e), identity),
+                        duration = Duration.ThirtySecond,
+                        velocity = Velocity.Medium,
+                      )
 
-                  sequencer
-                    .playSong(
-                      song
-                    )
-                    .unsafeRunAndForget()
-                case _ => ()
+                      given AudioContext = AudioContext()
+
+                      given ScalaSynth = new ScalaSynth()
+
+                      val sequencer = Sequencer()
+
+                      val song = Song(
+                        title = Title("Test Song"),
+                        tempo = Tempo(240),
+                        swing = Swing.Straight,
+                        mixer = Mixer(
+                          Track(
+                            title = Title("Test Track"),
+                            musicalEvent = theSound,
+                            instrument = given_ScalaSynth,
+                          )
+                        ),
+                      )
+
+                      import org.http4s.implicits.*
+
+                      client
+                        .successful(
+                          Request[IO](
+                            method = Method.POST,
+                            uri = uri"/api".withQueryParam("snippet", noteAsScala(note)),
+                          )
+                        )
+                        .unsafeRunAndForget()
+
+                      sequencer
+                        .playSong(
+                          song
+                        )
+                        .unsafeRunAndForget()
+                    case _ => ()
+                  }
+
+                }
               }
 
             }
-          }
-
         },
   )
 }

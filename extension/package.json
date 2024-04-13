@@ -1,0 +1,19 @@
+{
+  "name": "extension",
+  "version": "1.0.0",
+  "main": "./target/scala-3.3.3/extension-fastopt/main",
+  "license": "MIT",
+  "engines": {
+    "vscode": "^1.86.0"
+  },
+  "dependencies": {
+    "@types/vscode": "^1.86.0"
+  },
+  "devDependencies": {
+    "@vscode/vsce": "^2.25.0",
+    "typescript": "^5.4.5"
+  },
+  "activationEvents": [
+    "onLanguage:scala"
+  ]
+}

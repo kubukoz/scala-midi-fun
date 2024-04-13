@@ -1,20 +1,10 @@
-## Scala.js - Vite project template
+## JK studio (Sounds of Scala + MIDI fun)
 
 ----------------
 
-## Usage
+Code backing these demos:
 
-This is a sbt project configured specifically for Scala.js and Vite.
+https://twitter.com/kubukoz/status/1778954549966823718
 
-### Starting dev server
+https://twitter.com/kubukoz/status/1779175539107844548
 
-First thing in order to run this project, is to install vite dependency. To do it run
-`yarn install`
-To start Scala.js - Vite developement server, you first need to start incremental compilation for code.
-It is done by running `sbt ~fastLinkJS` directly from shell of just `~fastLinkJS` from SBT shell instance.
-The next step is to start the server. To do it, run `yarn dev` or if you use npm `npm run dev` in your terminal.
-
-### Adding new dependencies
-
-To add new dependencies, do it with 
-`yarn add ${dependencyName}`
